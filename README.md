@@ -25,12 +25,18 @@ InfraLinker is an IT infrastructure management platform.
 
 ## 🖥️ How to Use on Windows with MariaDB
 
-### 1. **Clone the Repository**
+### 1. **Clone the updated  Repository**
 
 ```powershell
 git clone https://github.com/IbtissamBenabid/INFRALINKER.git
 cd INFRALINKER
+
+# Source repo : 
+git clone https://github.com/Infralinker/Infralinker.git
+cd Infralinker
+
 ```
+
 
 ### 2. **Set Up Python Virtual Environment**
 
@@ -77,7 +83,17 @@ pip install <package-name>
 ### 4. **Initialize the Database**
 
 ```powershell
+# Initialize migrations directory (run once)
+flask db init
+
+# Generate a new migration after model changes
+flask db migrate -m "Initial migration."
+
+# Apply migrations to the database
 flask db upgrade
+
+# (Optional) Downgrade the database to the previous migration
+flask db downgrade
 ```
 Or run your custom install script if provided.
 
@@ -100,6 +116,49 @@ INSERT INTO tickets (
 ) VALUES
 ('TCK-2025-001', '2025-05-30', 'Server not responding after update.', 1, 1, 1, 'High', 'Service Down', 'OPEN', NULL, 'Urgent attention needed.', 1, NOW());
 ```
+---
+
+### 5b. **Créer un utilisateur admin (obligatoire pour la première connexion)**
+
+Après avoir initialisé la base, créez un utilisateur admin directement en SQL :
+
+```sql
+INSERT INTO admins (
+    firstname, lastname, email, phone, function, password_hash, is_admin, is_manager, add_date
+) VALUES (
+    'Admin', 'User', 'admin@infralinker.com', '0600000000', 'Administrateur',
+    '<mot_de_passe_hashé>', 1, 1, NOW()
+);
+```
+
+> **Remarque :**  
+> - Remplacez `<mot_de_passe_hashé>` par le hash du mot de passe généré avec Flask (par exemple avec `werkzeug.security.generate_password_hash('votre_mot_de_passe')` dans un shell Python).
+> - Vous pouvez aussi créer l’admin via un script Python utilisant vos modèles SQLAlchemy, par exemple :
+
+```python
+from app import create_app, db
+from app.models import Admin
+from werkzeug.security import generate_password_hash
+import datetime
+
+app = create_app('development')
+with app.app_context():
+    admin = Admin(
+        firstname="Admin",
+        lastname="User",
+        email="admin@infralinker.com",
+        phone="0600000000",
+        function="Administrateur",
+        password_hash=generate_password_hash("votre_mot_de_passe"),
+        is_admin=True,
+        is_manager=True,
+        add_date=datetime.datetime.now()
+    )
+    db.session.add(admin)
+    db.session.commit()
+    print("Admin créé avec succès.")
+```
+
 
 ### 6. **Run the Application**
 
