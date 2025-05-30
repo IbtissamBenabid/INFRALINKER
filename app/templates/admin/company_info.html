@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Company Information</h2>
+<form method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <div>{{ form.name.label }} {{ form.name() }}</div>
+    <div>{{ form.logo.label }} {{ form.logo() }}</div>
+    <div>{{ form.address.label }} {{ form.address() }}</div>
+    <div>{{ form.phone.label }} {{ form.phone() }}</div>
+    <div>{{ form.email.label }} {{ form.email() }}</div>
+    <div>{{ form.website.label }} {{ form.website() }}</div>
+    <div>{{ form.submit() }}</div>
+</form>
+{% if info and info.logo_path %}
+    <img src="{{ url_for('static', filename=info.logo_path.split('static/')[-1]) }}" alt="Logo" height="100">
+{% endif %}
+{% endblock %}

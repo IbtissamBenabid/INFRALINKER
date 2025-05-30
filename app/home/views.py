@@ -322,3 +322,4 @@ def infos_datacenters(id_datacenter):
                            get_cloud_provider_details=get_cloud_provider_details,
                            datacenters=datacenters,
                            title="DATACENTER'S INFOS")
+    

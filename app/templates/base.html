@@ -107,6 +107,7 @@
                       <div class="dropdown-divider"></div>
                       <a class="dropdown-item" href="{{ url_for('auth.logout') }}">{{ render_icon('box-arrow-right') }} - LOGOUT</a>
                       <a class="dropdown-item" href="{{ url_for('home.help') }}">{{ render_icon('info-circle') }} - About</a>
+                      <a class="dropdown-item" href="{{ url_for('admin.company_info') }}"> {{ render_icon('building') }} -Company Info</a>
                     </div>
                   </li>
                   <li title="Your are Administrator">{{ render_icon('square-fill', color="danger", size="20px") }}

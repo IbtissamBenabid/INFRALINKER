@@ -516,6 +516,23 @@ class Emailling_config(db.Model):
     egroup_vulnerability =  db.Column(db.String(5000))
     egroup_ticket =  db.Column(db.String(5000))
     egroup_contract =  db.Column(db.String(5000))
+    
+class CompanyInfo(db.Model):
+    """
+    COMPANY INFORMATION TABLE
+    """
+    __tablename__ = 'company_info'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200))
+    logo_path = db.Column(db.String(500))
+    address = db.Column(db.String(500))
+    phone = db.Column(db.String(50))
+    email = db.Column(db.String(100))
+    website = db.Column(db.String(200))
+    # Add other fields as needed
+
+    def __repr__(self):
+        return f'<CompanyInfo: {self.name}>'
 
 class Select2MultipleField(SelectMultipleField):
 

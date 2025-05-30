@@ -21,6 +21,9 @@ from ..library.ip_calculator import check_ip_in_network_by_id
 from wtforms.fields import DateField, TelField
 from flask_ckeditor import CKEditorField
 import re
+from flask_wtf import FlaskForm
+from wtforms import StringField, FileField, SubmitField
+from wtforms.validators import DataRequired, Optional
 __author__ = 'Abdellah ALAOUI ISMAILI'
 __version__ = '1.0.1'
 
@@ -465,3 +468,13 @@ class SMTPConfigForm(FlaskForm):
     egroup_ticket = TextAreaField('SEND NOTIFICATION OF TICKETS TO USERS:', render_kw={'class': 'form-control', 'rows': 5,  "placeholder": "email1@server.com, email2@server.com, email3@server.com"})
     egroup_contract = TextAreaField('SEND NOTIFICATION OF CONTRACTS TO USERS:', render_kw={'class': 'form-control', 'rows': 5,  "placeholder": "email1@server.com, email2@server.com, email3@server.com"})
     submit = SubmitField('SAVE')
+
+
+class CompanyInfoForm(FlaskForm):
+    name = StringField('Company Name', validators=[DataRequired()])
+    logo = FileField('Logo', validators=[Optional()])
+    address = StringField('Address')
+    phone = StringField('Phone')
+    email = StringField('Email')
+    website = StringField('Website')
+    submit = SubmitField('Save')

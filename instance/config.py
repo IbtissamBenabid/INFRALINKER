@@ -1,7 +1,7 @@
 import os
 
-user = os.environ["MYSQL_USER"]
-password = os.environ["MYSQL_PASSWORD"]
+user = os.environ.get("MYSQL_USER", "admin_db")
+password = os.environ.get("MYSQL_PASSWORD", "admin_db_password")
 
 SECRET_KEY = os.urandom(24)
 STRIPE_API_KEY = 'SmFjb2IgS2FwbGFuLU1vc3MgaXMgYSBoZXJv'

@@ -26,6 +26,12 @@ import io
 from werkzeug.utils import secure_filename
 import os
 from sqlalchemy.sql import exists
+from flask import render_template, redirect, url_for, flash, request
+from .forms import CompanyInfoForm
+from app.models import CompanyInfo
+import os
+
+from . import admin  # Make sure this is at the top if not already
 
 def mydc_db_connexion():
     db_connection_str = current_app.config["SQLALCHEMY_DATABASE_URI"]
@@ -1325,56 +1331,49 @@ def server_details(id):
 @login_required
 def new_vulnerability():
     """
-    Add an vulnerability to the database
+    Add a vulnerability to the database
     """
-    emailling_details = Emailling_config.query.get_or_404(1)
+    emailing_details = Emailling_config.query.get_or_404(1)
     form = VulnerabilityForm()
+    new_vulnerability = True
     if form.validate_on_submit():
         vulnerability = Vulnerability(
-        title_vulnerability = form.title_vulnerability.data,
-        date_vulnerability = form.date_vulnerability.data,
-        cvs_code = form.cvs_code.data.upper(),
-        severity = form.severity.data,
-        risk = form.risk.data,
-        impact = form.impact.data,
-        ticket = form.ticket.data,
-        admin = form.admin.data,
-        add_by = current_user.id,
-        add_date = datetime.datetime.now(),
-        recommanded_solution = form.recommanded_solution.data.capitalize())
-
+            title_vulnerability=form.title_vulnerability.data,
+            date_vulnerability=form.date_vulnerability.data,
+            cvs_code=form.cvs_code.data.upper(),
+            severity=form.severity.data,
+            risk=form.risk.data,
+            impact=form.impact.data,
+            ticket=form.ticket.data,
+            admin=form.admin.data,
+            add_by=current_user.id,
+            add_date=datetime.datetime.now(),
+            recommended_solution=form.recommended_solution.data.capitalize()
+        )
         try:
             db.session.add(vulnerability)
             db.session.commit()
-            flash('You have successfully added a new vulnerability.')
-            change_log('Vulnerability', 'New', vulnerability.id, vulnerability.title_vulnerability)
+            flash('Vulnerability added successfully.', 'success')
 
-            # SEND EMAIL TO GROUPE FOR NEW VULNERABILITY
-            emails_group = emailling_details.egroup_vulnerability
+            # SEND EMAIL TO GROUP FOR NEW VULNERABILITY
+            emails_group = emailing_details.egroup_vulnerability
 
-            if emails_group :
-
+            if emails_group:
                 recipients = [email.strip() for email in emails_group.strip('()').split(',')]
                 send_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S %Z")
-                subject = (""" [INFRALINKER] - NEW VULNERABILITY HAVE BEEN ADDED. """)
+                subject = "[INFRALINKER] - NEW VULNERABILITY HAVE BEEN ADDED."
                 html_template = render_template('email/email-vulnerability.html', vulnerability=vulnerability, send_time=send_time)
-
                 try:
                     send_email(recipients, subject, html_template)
-
                 except Exception as e:
                     flash(f"Error sending email: {e}")
-            else :
-                pass
-
+            return redirect(url_for('admin.list_vulnerabilities'))
         except Exception as e:
-            flash('Failed to Save to DataBase: '+ str(e), 'danger')
+            flash('Failed to Save to DataBase: ' + str(e), 'danger')
+            return redirect(url_for('admin.list_vulnerabilities'))
 
-        # redirect to platforms page
-        return redirect(url_for('admin.list_vulnerabilities'))
-
-    # load department template
-    return render_template('admin/vulnerabilities/vulnerability.html',new_vulnerability=new_vulnerability ,vulnerability="Add", form=form,
+    # load vulnerability template
+    return render_template('admin/vulnerabilities/vulnerability.html', new_vulnerability=new_vulnerability, vulnerability="Add", form=form,
                            title="ADD NEW VULNERABILITY")
 
 @admin.route('/vulnerabilities/list', methods=['GET'])
@@ -1641,6 +1640,7 @@ def project_details(id):
 ## PROJECTS DOCUMENTS MODULE ###
 ################################
 
+# ...existing code...
 @admin.route('/project_document/<int:project_id>/new_document', methods=['GET', 'POST'])
 @login_required
 def new_project_document(project_id):
@@ -1649,33 +1649,38 @@ def new_project_document(project_id):
     """
 
     project = Project.query.get(project_id)
-    project_documents = ProjectDocuments.query.filter_by(project_id =project_id).all()
+    project_documents = ProjectDocuments.query.filter_by(project_id=project_id).all()
     form = ProjectDocumentsForm()
-    
+    new_project = False
+
     if form.validate_on_submit():
         filename = secure_filename(form.document_name.data.filename)
         project_document = ProjectDocuments(
-            document_name = filename,
+            document_name=filename,
             project=project,
-            description = form.description.data.capitalize(),
-            add_by = current_user.id,
-            add_date = datetime.datetime.now())
-        try:         
-            form.document_name.data.save('app/static/uploads/projects/documents/'+ filename)
+            description=form.description.data.capitalize(),
+            add_by=current_user.id,
+            add_date=datetime.datetime.now())
+        try:
+            form.document_name.data.save('app/static/uploads/projects/documents/' + filename)
             db.session.add(project_document)
             db.session.commit()
             flash('You have successfully added a new Document.')
-            change_log('Project Document '+ filename, 'New', project_document.id, project_document.document_name)
-            
+            change_log('Project Document ' + filename, 'New', project_document.id, project_document.document_name)
+            return redirect(url_for('admin.new_project_document', project_id=project_id))  # <-- always use project_id
         except Exception as e:
-            flash('Failed to Save to DataBase: '+ str(e), 'danger')
-
-        return redirect(url_for('admin.new_project_document', project_id=project_document.project_id))
+            flash('Failed to Save to DataBase: ' + str(e), 'danger')
+            return redirect(url_for('admin.new_project_document', project_id=project_id))  # <-- always use project_id
 
     return render_template('admin/projects/project_document.html',
-            new_project=new_project,project=project,
-            project_document="Add",project_documents=project_documents, form=form, get_UserName=get_UserName,
-                           title="ADD NEW DOCUMENT")
+        new_project=new_project,
+        project=project,
+        project_document="Add",
+        project_documents=project_documents,
+        form=form,
+        get_UserName=get_UserName,
+        title="ADD NEW DOCUMENT")
+
 
 @admin.route('/project_document/delete_document/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -1683,17 +1688,14 @@ def delete_project_document(id):
     """
     Delete a Document from the database
     """
-    
     project_document = ProjectDocuments.query.get_or_404(id)
+    project_id = project_document.project_id
     db.session.delete(project_document)
     db.session.commit()
-    
-    os.remove("app/static/uploads/projects/documents/"+ project_document.document_name) # specifying the path of the file
+    os.remove("app/static/uploads/projects/documents/" + project_document.document_name)
     flash('Document Deleted successfully.')
-    change_log('Project Document '+ project_document.document_name, 'Delete', project_document.id, project_document.document_name)
-
-    
-    return redirect(url_for('admin.new_project_document', project_id=project_document.project_id))
+    change_log('Project Document ' + project_document.document_name, 'Delete', project_document.id, project_document.document_name)
+    return redirect(url_for('admin.new_project_document', project_id=project_id))  # <-- always use project_id
 
 #######################################
 ### CONTRACTS MANAGEMENT MODULE #####
@@ -1890,7 +1892,7 @@ def new_application():
     return render_template('admin/applications/application.html',new_application=new_application ,application="Add", form=form,get_tags_name=get_tags_name,
                            title="ADD NEW APPLICATION")
 
-@admin.route('/applications/list/', methods=['GET'])
+@admin.route('/applications/list', methods=['GET'])
 
 @login_required
 def list_applications():
@@ -2280,3 +2282,27 @@ def import_applications_data():
             flash('NO DATA PROVIDED !', 'danger')
     return render_template('admin/import/csv_applications.html', form=form, title="IMPORT APPLICATIONS DATA")
 
+@admin.route('/company-info', methods=['GET', 'POST'])
+@login_required
+def company_info():
+    from .forms import CompanyInfoForm
+    from app.models import CompanyInfo
+    import os
+
+    info = CompanyInfo.query.first()
+    form = CompanyInfoForm(obj=info)
+    if form.validate_on_submit():
+        if not info:
+            info = CompanyInfo()
+            db.session.add(info)
+        form.populate_obj(info)
+        # Handle logo upload
+        if form.logo.data:
+            logo_file = form.logo.data
+            logo_path = os.path.join('static/uploads', logo_file.filename)
+            logo_file.save(logo_path)
+            info.logo_path = logo_path
+        db.session.commit()
+        flash('Company information updated.')
+        return redirect(url_for('admin.company_info'))
+    return render_template('admin/company_info.html', form=form, info=info)
